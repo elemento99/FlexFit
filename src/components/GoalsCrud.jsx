@@ -11,8 +11,6 @@ const GoalsCrud = () => {
   const [reps, setReps] = useState(1)
   const [microcycle, setMicrocycle] = useState(1)
   const [microcycles, setMicrocycles] = useState([])
-  const [maxMicrocycle, setMaxMicrocycle] = useState(1)
-  const [lastMicrocycle, setLastMicrocycle] = useState(null)
   const [loading, setLoading] = useState(true)
   const [editingGoalId, setEditingGoalId] = useState(null)
   const [editedGoal, setEditedGoal] = useState({})
@@ -50,17 +48,11 @@ const GoalsCrud = () => {
           }
 
           setMicrocycles([1])
-          setMaxMicrocycle(1)
           setMicrocycle(1)
         } else {
           const allMicrocycles = [...new Set(data.map(item => item.microcycle))]
-          const newMaxMicrocycle = allMicrocycles.length > 0 ? allMicrocycles[0] : 1
-
-          if (maxMicrocycle < newMaxMicrocycle) {
-            setMicrocycles(allMicrocycles)
-            setMaxMicrocycle(newMaxMicrocycle)
-            setMicrocycle(newMaxMicrocycle)
-          }
+          setMicrocycles(allMicrocycles)
+          setMicrocycle(allMicrocycles[0])
         }
       }
     }
@@ -84,14 +76,9 @@ const GoalsCrud = () => {
 
     if (user) {
       fetchMicrocycles()
+      fetchGoals()
     }
   }, [user, microcycle])
-
-  useEffect(() => {
-    if (maxMicrocycle !== microcycle) {
-      setMicrocycle(maxMicrocycle)
-    }
-  }, [maxMicrocycle])
 
   const createGoal = async () => {
     if (!exercise) return alert("Exercise field cannot be empty.")
@@ -183,15 +170,14 @@ const GoalsCrud = () => {
   }
 
   const createNextMicrocycle = async () => {
-    if (!lastMicrocycle || lastMicrocycle.length === 0) {
+    if (!goals.length) {
       console.error("No goals found in the last microcycle.")
       return
     }
 
     try {
-      const newMicrocycle = maxMicrocycle + 1
-
-      const newGoals = lastMicrocycle.map(({ id, ...goalWithoutId }) => ({
+      const newMicrocycle = microcycle + 1
+      const newGoals = goals.map(({ id, ...goalWithoutId }) => ({
         ...goalWithoutId,
         microcycle: newMicrocycle,
       }))
@@ -207,9 +193,7 @@ const GoalsCrud = () => {
       }
 
       setGoals((prevGoals) => [...prevGoals, ...data])
-      setMaxMicrocycle(newMicrocycle)
       setMicrocycles((prevMicrocycles) => [...prevMicrocycles, newMicrocycle])
-
       setMicrocycle(newMicrocycle)
     } catch (error) {
       console.error(error)
@@ -232,247 +216,163 @@ const GoalsCrud = () => {
     }
   }
 
-  const useFetchMicrocycles = (user, maxMicrocycle, setMicrocycles, setMaxMicrocycle, setMicrocycle) => {
-    useEffect(() => {
-      const fetchMicrocycles = async () => {
-        const { data, error } = await supabase
-          .from("goals")
-          .select("microcycle")
-          .eq("user_id", user.id)
-          .order("microcycle", { ascending: false })
-
-        if (error) {
-          console.error(error)
-        } else {
-          if (data.length === 0) {
-            const { error: insertError } = await supabase
-              .from("goals")
-              .insert([
-                {
-                  user_id: user.id,
-                  microcycle: 1,
-                  Exercise: "Default Exercise",
-                  Sets: 1,
-                  Reps: 1,
-                  categories: [],
-                },
-              ])
-
-            if (insertError) {
-              console.error(insertError)
-              return
-            }
-
-            setMicrocycles([1])
-            setMaxMicrocycle(1)
-            setMicrocycle(1)
-          } else {
-            const allMicrocycles = [...new Set(data.map(item => item.microcycle))]
-            const newMaxMicrocycle = allMicrocycles.length > 0 ? allMicrocycles[0] : 1
-
-            if (maxMicrocycle < newMaxMicrocycle) {
-              setMicrocycles(allMicrocycles)
-              setMaxMicrocycle(newMaxMicrocycle)
-              setMicrocycle(newMaxMicrocycle)
-            }
-          }
-        }
-      }
-      if (user) fetchMicrocycles()
-    }, [user, maxMicrocycle, setMicrocycles, setMaxMicrocycle, setMicrocycle])
-  }
-
-  const useFetchGoals = (microcycle, user, setGoals, setLoading) => {
-    useEffect(() => {
-      const fetchGoals = async () => {
-        if (!microcycle) return
-        setLoading(true)
-        const { data, error } = await supabase
-          .from("goals")
-          .select("*")
-          .eq("user_id", user.id)
-          .eq("microcycle", microcycle)
-
-        if (error) {
-          console.error(error)
-        } else {
-          setGoals(data)
-        }
-        setLoading(false)
-      }
-      if (user && microcycle) fetchGoals()
-    }, [microcycle, user, setGoals, setLoading])
-  }
-
-  const useUpdateMicrocycle = (maxMicrocycle, setMicrocycle) => {
-    useEffect(() => {
-      if (maxMicrocycle !== microcycle) {
-        setMicrocycle(maxMicrocycle)
-      }
-    }, [maxMicrocycle, setMicrocycle])
-  }
-
-  const fetchMicrocycles = async () => {
-    const { data, error } = await supabase
-      .from("goals")
-      .select("microcycle")
-      .eq("user_id", user.id)
-      .order("microcycle", { ascending: false })
-
-    if (error) {
-      console.error(error)
-    } else {
-      if (data.length === 0) {
-        const { error: insertError } = await supabase
-          .from("goals")
-          .insert([
-            {
-              user_id: user.id,
-              microcycle: 1,
-              Exercise: "Default Exercise",
-              Sets: 1,
-              Reps: 1,
-              categories: [],
-            },
-          ])
-
-        if (insertError) {
-          console.error(insertError)
-          return
-        }
-
-        setMicrocycles([1])
-        setMaxMicrocycle(1)
-        setMicrocycle(1)
-      } else {
-        const allMicrocycles = [...new Set(data.map(item => item.microcycle))]
-        const newMaxMicrocycle = allMicrocycles.length > 0 ? allMicrocycles[0] : 1
-
-        if (maxMicrocycle < newMaxMicrocycle) {
-          setMicrocycles(allMicrocycles)
-          setMaxMicrocycle(newMaxMicrocycle)
-          setMicrocycle(newMaxMicrocycle)
-        }
-      }
-    }
-  }
-    const fetchGoals = async () => {
-      if (!microcycle) return
-      setLoading(true)
-      const { data, error } = await supabase
-        .from("goals")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("microcycle", microcycle)
-
-      if (error) {
-        console.error(error)
-      } else {
-        setGoals(data)
-      }
-      setLoading(false)
-    }
-
-    if (user) {
-      fetchMicrocycles()
-    }
   return (
     <div>
-      <button
-        onClick={() => {
-          setModalIsOpen(true)
-          fetchMicrocycles()
-          fetchGoals()
-          setMicrocycle(maxMicrocycle)
-        }}
-      >
-        Open Goals Modal
-      </button>
+      <button onClick={() => setModalIsOpen(true)}>Open Goals Modal</button>
 
       <Modal
         isOpen={modalIsOpen}
         onRequestClose={() => setModalIsOpen(false)}
         contentLabel="Goals Modal"
+        ariaHideApp={false}
+        style={{
+          overlay: { backgroundColor: "rgba(0, 0, 0, 0.75)" },
+          content: {
+            backgroundColor: "white",
+            padding: "20px",
+            maxWidth: "80%",
+            margin: "auto",
+            borderRadius: "8px",
+          },
+        }}
       >
-        <h2>Goals</h2>
-        {loading && <p>Loading...</p>}
-        {!loading && goals.length === 0 && <p>No goals found</p>}
-        <button onClick={() => createNextMicrocycle()}>Next Microcycle</button>
-        <div>
-          <form>
-            <input
-              type="text"
-              placeholder="Exercise"
-              value={exercise}
-              onChange={(e) => setExercise(e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="Sets"
-              value={sets}
-              onChange={(e) => setSets(e.target.value)}
-            />
-            <input
-              type="number"
-              placeholder="Reps"
-              value={reps}
-              onChange={(e) => setReps(e.target.value)}
-            />
-            <textarea
-              placeholder="Categories"
-              value={categories}
-              onChange={(e) => setCategories(e.target.value)}
-            />
-            <button type="button" onClick={() => createGoal()}>Add Goal</button>
-          </form>
-        </div>
-        <ul>
-          {goals.map(goal => (
-            <li key={goal.id}>
-              <div>
-                {editingGoalId === goal.id ? (
-                  <div>
-                    <input
-                      type="text"
-                      value={editedGoal.Exercise || goal.Exercise}
-                      onChange={(e) => handleEditChange(e, "Exercise", goal.id)}
-                    />
-                    <input
-                      type="number"
-                      value={editedGoal.Sets || goal.Sets}
-                      onChange={(e) => handleEditChange(e, "Sets", goal.id)}
-                    />
-                    <input
-                      type="number"
-                      value={editedGoal.Reps || goal.Reps}
-                      onChange={(e) => handleEditChange(e, "Reps", goal.id)}
-                    />
-                    <textarea
-                      value={editedGoal.categories || goal.categories}
-                      onChange={(e) => handleEditChange(e, "categories", goal.id)}
-                    />
-                    <button onClick={() => saveEditedGoal(goal.id)}>Save</button>
-                    <button onClick={() => setEditingGoalId(null)}>Cancel</button>
-                  </div>
-                ) : (
-                  <div>
-                    <span>{goal.Exercise}</span>
-                    <span>{goal.Sets}</span>
-                    <span>{goal.Reps}</span>
-                    <span>{goal.categories}</span>
-                    <button onClick={() => handleEdit(goal)}>Edit</button>
-                    <button onClick={() => deleteGoal(goal.id)}>Delete</button>
+        <h2>Add New Goal</h2>
+        <label>
+          Select Microcycle:
+          <select
+            value={microcycle}
+            onChange={(e) => setMicrocycle(parseInt(e.target.value))}
+            disabled={microcycles.length === 0}
+          >
+            {microcycles.map((cycle) => (
+              <option key={cycle} value={cycle}>
+                Microcycle {cycle}
+              </option>
+            ))}
+          </select>
+        </label>
+        <p>Exercise:</p>
+        <input
+          type="text"
+          placeholder="Exercise"
+          value={exercise}
+          onChange={(e) => setExercise(e.target.value)}
+        />
+        <p>Sets:</p>
+        <input
+          type="number"
+          placeholder="Sets"
+          value={sets}
+          onChange={(e) => setSets(parseInt(e.target.value) || 1)}
+        />
+        <p>Reps:</p>
+        <input
+          type="number"
+          placeholder="Reps"
+          value={reps}
+          onChange={(e) => setReps(parseInt(e.target.value) || 1)}
+        />
+        <p>Categories (JSON format):</p>
+        <textarea
+          placeholder='Enter categories as JSON, e.g. ["Cardio", "Strength"]'
+          value={categories}
+          onChange={(e) => setCategories(e.target.value)}
+        />
+        <button onClick={createGoal}>Add Goal</button>
+        <button onClick={createNextMicrocycle}>Create Next Microcycle</button>
+
+        <h2>Your Goals</h2>
+        {loading ? (
+          <p>Loading goals...</p>
+        ) : goals.length > 0 ? (
+          <table border="1" style={{ width: "100%", textAlign: "left" }}>
+            <thead>
+              <tr>
+                <th>Exercise</th>
+                <th>Sets</th>
+                <th>Reps</th>
+                <th>Categories</th>
+                <th>Actions</th>
+                <th>Active</th>
+              </tr>
+            </thead>
+            <tbody>
+              {goals.map((goal) => (
+                <tr key={goal.id}>
+                  <td>
+                    {editingGoalId === goal.id ? (
+                      <input
+                        type="text"
+                        value={editedGoal.Exercise || goal.Exercise}
+                        onChange={(e) => handleEditChange(e, "Exercise", goal.id)}
+                      />
+                    ) : (
+                      goal.Exercise
+                    )}
+                  </td>
+                  <td>
+                    {editingGoalId === goal.id ? (
+                      <input
+                        type="number"
+                        value={editedGoal.Sets || goal.Sets}
+                        onChange={(e) => handleEditChange(e, "Sets", goal.id)}
+                      />
+                    ) : (
+                      goal.Sets
+                    )}
+                  </td>
+                  <td>
+                    {editingGoalId === goal.id ? (
+                      <input
+                        type="number"
+                        value={editedGoal.Reps || goal.Reps}
+                        onChange={(e) => handleEditChange(e, "Reps", goal.id)}
+                      />
+                    ) : (
+                      goal.Reps
+                    )}
+                  </td>
+                  <td>
+                    {editingGoalId === goal.id ? (
+                      <textarea
+                        value={editedGoal.categories || JSON.stringify(goal.categories)}
+                        onChange={(e) => handleEditChange(e, "categories", goal.id)}
+                      />
+                    ) : (
+                      goal.categories ? JSON.stringify(goal.categories) : "No categories"
+                    )}
+                  </td>
+                  <td>
+                    {editingGoalId === goal.id ? (
+                      <button onClick={() => saveEditedGoal(goal.id)}>Save</button>
+                    ) : (
+                      <>
+                        <button onClick={() => handleEdit(goal)}>Edit</button>
+                        <button onClick={() => deleteGoal(goal.id)}>Delete</button>
+                      </>
+                    )}
+                  </td>
+                  <td>
                     <button
                       onClick={() => toggleActive(goal.id, goal.active)}
+                      style={{
+                        backgroundColor: goal.active ? "green" : "red",
+                        color: "white",
+                        padding: "5px 10px",
+                        border: "none",
+                        borderRadius: "5px",
+                      }}
                     >
-                      {goal.active === 1 ? "Deactivate" : "Activate"}
+                      {goal.active ? "Active" : "Paused"}
                     </button>
-                  </div>
-                )}
-              </div>
-            </li>
-          ))}
-        </ul>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>No goals found for this microcycle.</p>
+        )}
       </Modal>
     </div>
   )
