@@ -52,3 +52,15 @@
       padding-left: 0.5rem;
     }
   }
+  .modal {
+    display: flex; /* O asegúrate de que sea visible */
+    justify-content: center;
+    align-items: center;
+  }
+  
+  .modal-content {
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+  }
+  
