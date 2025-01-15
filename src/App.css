@@ -1,0 +1,54 @@
+/* Diseño predeterminado: tabla */
+.goals-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .goals-table th, .goals-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: left;
+  }
+  
+  .goals-table th {
+    background-color: #f2f2f2;
+  }
+  
+ 
+  @media (max-width: 768px) {
+    .goals-table {
+      display: block;
+    }
+  
+    .goals-table thead {
+      display: none;
+    }
+  
+    .goals-table tbody {
+      display: block;
+    }
+  
+    .goals-table tr {
+      display: block;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      overflow: hidden;
+    }
+  
+    .goals-table td {
+      display: block;
+      padding: 0.5rem;
+      text-align: right;
+      position: relative;
+    }
+  
+    .goals-table td::before {
+      content: attr(data-label);
+      position: absolute;
+      left: 0;
+      font-weight: bold;
+      text-align: left;
+      padding-left: 0.5rem;
+    }
+  }
