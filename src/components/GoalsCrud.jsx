@@ -240,7 +240,6 @@ const GoalsCrud = () => {
         <label>
           Select Microcycle:
           <select
-            value={microcycle}
             onChange={(e) => setMicrocycle(parseInt(e.target.value))}
             disabled={microcycles.length === 0}
           >
