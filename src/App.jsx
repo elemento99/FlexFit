@@ -4,6 +4,7 @@ import LoginSignup from './components/LoginSignup';
 import GoalsCrud from './components/GoalsCrud';
 import RandomExercise from './components/RandomExercise';
 import { GoalsProvider } from './contexts/GoalsContext';
+import DoneSetsTable from './components/DoneSetsTable';
 import 'bootstrap/dist/css/bootstrap.min.css';
 
 
@@ -17,6 +18,7 @@ const App = () => {
         <GoalsProvider>
     <GoalsCrud />
     <RandomExercise/>
+    <DoneSetsTable/>
   </GoalsProvider>
         
       </div>

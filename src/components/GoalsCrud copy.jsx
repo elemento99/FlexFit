@@ -18,7 +18,7 @@ const GoalsCrud = () => {
   const [categories, setCategories] = useState([])
   const [newCategory, setNewCategory] = useState("")
   const [filterCategory, setFilterCategory] = useState("")
-  const [allCategories, setAllCategories] = useState([])
+  const [allCategories, setAllCategories] = useState([]) // Nuevo estado para todas las categorías
 
   useEffect(() => {
     const fetchMicrocycles = async () => {
@@ -73,13 +73,15 @@ const GoalsCrud = () => {
         console.error(error)
       } else {
         setGoals(data)
+
+        // Extraemos las categorías de los objetivos y las añadimos al estado
         const allCategoriesSet = new Set()
         data.forEach((goal) => {
           if (goal.categories && goal.categories.length) {
             goal.categories.forEach((category) => allCategoriesSet.add(category))
           }
         })
-        setAllCategories([...allCategoriesSet])
+        setAllCategories([...allCategoriesSet]) // Guardamos todas las categorías únicas
       }
       setLoading(false)
     }
@@ -122,56 +124,20 @@ const GoalsCrud = () => {
     }
   }
 
-  const deleteGoal = async (goalId, exerciseName) => {
-    // Mostrar cuadro de confirmación con el nombre del ejercicio
-    const isConfirmed = window.confirm(
-      `¿Estás seguro que deseas eliminar el ejercicio "${exerciseName}"?`
-    )
+  const deleteGoal = async (goalId) => {
+    const { error } = await supabase.from("goals").delete().eq("id", goalId)
 
-    // Si el usuario cancela la operación, salir de la función
-    if (!isConfirmed) {
-      return
-    }
-
-    try {
-      const { error: doneError } = await supabase
-        .from("done")
-        .delete()
-        .eq("goals_id", goalId)
-
-      if (doneError) {
-        console.error("Error deleting related records:", doneError)
-        alert("Error al eliminar registros relacionados. Por favor, intenta de nuevo.")
-        return
-      }
-
-
-      const { error: goalError } = await supabase
-        .from("goals")
-        .delete()
-        .eq("id", goalId)
-
-      if (goalError) {
-        console.error("Error deleting goal:", goalError)
-        alert("Error al eliminar el ejercicio. Por favor, intenta de nuevo.")
-        return
-      }
-
+    if (error) {
+      console.error(error)
+    } else {
       setGoals(goals.filter((goal) => goal.id !== goalId))
-      alert("Ejercicio eliminado con éxito")
-
-    } catch (error) {
-      console.error("Error in delete operation:", error)
-      alert("Error en la operación de eliminación. Por favor, intenta de nuevo.")
     }
   }
 
-  const handleEditChange = (e, field) => {
+  const handleEditChange = (e, field, goalId) => {
     setEditedGoal((prev) => ({
       ...prev,
-      [field]: field === "categories" ?
-        (typeof e.target.value === "string" ? e.target.value.split(",") : e.target.value) :
-        e.target.value
+      [field]: e.target.value,
     }))
   }
 
@@ -183,7 +149,7 @@ const GoalsCrud = () => {
           Exercise: editedGoal.Exercise,
           Sets: editedGoal.Sets,
           Reps: editedGoal.Reps,
-          categories: editedGoal.categories || [],
+          categories: editedGoal.categories,
         })
         .eq("id", goalId)
         .select()
@@ -208,7 +174,6 @@ const GoalsCrud = () => {
       Exercise: goal.Exercise,
       Sets: goal.Sets,
       Reps: goal.Reps,
-      categories: goal.categories || [],
     })
   }
 
@@ -262,17 +227,13 @@ const GoalsCrud = () => {
   const filterGoalsByCategory = (goals) => {
     if (!filterCategory) return goals
     return goals.filter((goal) =>
-      goal.categories && goal.categories.some((category) =>
-        category.toLowerCase().includes(filterCategory.toLowerCase())
-      )
+      goal.categories && goal.categories.some((category) => category.toLowerCase().includes(filterCategory.toLowerCase()))
     )
   }
 
   const addCategory = () => {
-    if (newCategory.trim()) {
-      setCategories([...categories, newCategory.trim()])
-      setNewCategory("")
-    }
+    setCategories([...categories, newCategory])
+    setNewCategory("") // Reset the input field after adding
   }
 
   return (
@@ -332,20 +293,21 @@ const GoalsCrud = () => {
           </select>
         </label>
         <button
-          onClick={createNextMicrocycle}
-          style={{
-            padding: "10px 20px",
-            backgroundColor: "#007bff",
-            color: "white",
-            border: "none",
-            borderRadius: "5px",
-            cursor: "pointer",
-            marginTop: "10px",
-            width: "100%",
-          }}
-        >
-          Create Next Microcycle
-        </button>
+  onClick={createNextMicrocycle}
+  style={{
+    padding: "10px 20px",
+    backgroundColor: "#007bff",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: "pointer",
+    marginTop: "10px",
+    width: "100%",
+  }}
+>
+  Create Next Microcycle
+</button>
+
 
         <p>Exercise:</p>
         <input
@@ -383,32 +345,32 @@ const GoalsCrud = () => {
             />
           </div>
         ))}
-        <div style={{ display: "flex", gap: "10px", marginBottom: "20px" }}>
-          <input
-            type="text"
-            value={newCategory}
-            onChange={(e) => setNewCategory(e.target.value)}
-            placeholder="New Category"
-            style={{
-              padding: "10px",
-              flex: 1,
-            }}
-          />
-          <button
-            onClick={addCategory}
-            disabled={!newCategory}
-            style={{
-              padding: "10px 20px",
-              backgroundColor: "#4CAF50",
-              color: "white",
-              border: "none",
-              borderRadius: "5px",
-              cursor: newCategory ? "pointer" : "not-allowed",
-            }}
-          >
-            Add Category
-          </button>
-        </div>
+        <input
+          type="text"
+          value={newCategory}
+          onChange={(e) => setNewCategory(e.target.value)}
+          placeholder="New Category"
+          style={{
+            padding: "10px",
+            marginBottom: "10px",
+            width: "100%",
+          }}
+        />
+<button
+  onClick={addCategory}
+  disabled={!newCategory} // Deshabilitar si el campo está vacío
+  style={{
+    padding: "10px 20px",
+    backgroundColor: "#4CAF50",
+    color: "white",
+    border: "none",
+    borderRadius: "5px",
+    cursor: newCategory ? "pointer" : "not-allowed", // Cambiar el cursor si está deshabilitado
+    marginTop: "10px",
+  }}
+>
+  +
+</button>
 
         <button
           onClick={createGoal}
@@ -420,7 +382,6 @@ const GoalsCrud = () => {
             borderRadius: "5px",
             cursor: "pointer",
             marginTop: "10px",
-            width: "100%",
           }}
         >
           Add Goal
@@ -449,103 +410,57 @@ const GoalsCrud = () => {
                   key={goal.id}
                   className="goal-card"
                   style={{
-                    padding: "20px",
+                    padding: "10px",
                     border: "1px solid #ccc",
                     borderRadius: "8px",
-                    marginBottom: "15px",
+                    marginBottom: "10px",
                     backgroundColor: "#f9f9f9",
                   }}
                 >
-                  {editingGoalId === goal.id ? (
-                    <div>
-                      <input
-                        type="text"
-                        value={editedGoal.Exercise}
-                        onChange={(e) => handleEditChange(e, "Exercise")}
-                        style={{ padding: "8px", marginBottom: "10px", width: "100%" }}
-                      />
-                      <input
-                        type="number"
-                        value={editedGoal.Sets}
-                        onChange={(e) => handleEditChange(e, "Sets")}
-                        style={{ padding: "8px", marginBottom: "10px", width: "100%" }}
-                      />
-                      <input
-                        type="number"
-                        value={editedGoal.Reps}
-                        onChange={(e) => handleEditChange(e, "Reps")}
-                        style={{ padding: "8px", marginBottom: "10px", width: "100%" }}
-                      />
-                      <input
-                        type="text"
-                        value={editedGoal.categories}
-                        onChange={(e) => handleEditChange(e, "categories")}
-                        placeholder="Categories (comma-separated)"
-                        style={{ padding: "8px", marginBottom: "10px", width: "100%" }}
-                      />
-                      <button
-                        onClick={() => saveEditedGoal(goal.id)}
-                        style={{
-                          padding: "8px 16px",
-                          backgroundColor: "#4CAF50",
-                          color: "white",
-                          border: "none",
-                          borderRadius: "4px",
-                          cursor: "pointer",
-                        }}
-                      >
-                        Save
-                      </button>
-                    </div>
-                  ) : (
-                    <>
-                      <h3>{goal.Exercise}</h3>
-                      <p>Sets: {goal.Sets}</p>
-                      <p>Reps: {goal.Reps}</p>
-                      <p>Categories: {goal.categories ? goal.categories.join(", ") : "No categories"}</p>
-                      <div style={{ display: "flex", gap: "10px", marginTop: "10px" }}>
-                        <button
-                          onClick={() => handleEdit(goal)}
-                          style={{
-                            padding: "8px 16px",
-                            backgroundColor: "#4CAF50",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => deleteGoal(goal.id, goal.Exercise)}
-                          style={{
-                            padding: "8px 16px",
-                            backgroundColor: "#f44336",
-                            color: "white",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          Delete
-                        </button>
-                        <button
-                          onClick={() => toggleActive(goal.id, goal.active)}
-                          style={{
-                            backgroundColor: goal.active ? "green" : "red",
-                            color: "white",
-                            padding: "8px 16px",
-                            border: "none",
-                            borderRadius: "4px",
-                            cursor: "pointer",
-                          }}
-                        >
-                          {goal.active ? "Active" : "Paused"}
-                        </button>
-                      </div>
-                    </>
-                  )}
+                  <h3>{goal.Exercise}</h3>
+                  <p>Sets: {goal.Sets}</p>
+                  <p>Reps: {goal.Reps}</p>
+                  <p>Categories: {goal.categories ? JSON.stringify(goal.categories) : "No categories"}</p>
+                  <div>
+                    <button
+                      onClick={() => handleEdit(goal)}
+                      style={{
+                        padding: "5px 10px",
+                        backgroundColor: "#4CAF50",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "5px",
+                        marginRight: "5px",
+                      }}
+                    >
+                      Edit
+                    </button>
+                    <button
+                      onClick={() => deleteGoal(goal.id)}
+                      style={{
+                        padding: "5px 10px",
+                        backgroundColor: "#f44336",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "5px",
+                        marginRight: "5px",
+                      }}
+                    >
+                      Delete
+                    </button>
+                    <button
+                      onClick={() => toggleActive(goal.id, goal.active)}
+                      style={{
+                        backgroundColor: goal.active ? "green" : "red",
+                        color: "white",
+                        padding: "5px 10px",
+                        border: "none",
+                        borderRadius: "5px",
+                      }}
+                    >
+                      {goal.active ? "Active" : "Paused"}
+                    </button>
+                  </div>
                 </div>
               ))
             ) : (

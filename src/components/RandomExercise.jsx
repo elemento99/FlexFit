@@ -11,7 +11,7 @@ const DoneExercise = () => {
   const [fail, setFail] = useState(false);
   const [categories, setCategories] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState("All");
-  const [setsRemaining, setSetsRemaining] = useState([]);
+  const [setsRemaining, setSetsRemaining] = useState(0);
 
   const fetchGoals = async () => {
     const { data: maxData, error: maxError } = await supabase
@@ -47,7 +47,7 @@ const DoneExercise = () => {
           ? data
           : data.filter((goal) => goal.categories && goal.categories.includes(selectedCategory));
 
-      console.log("Filtered goals:", filteredGoals); 
+      console.log("Filtered goals:", filteredGoals);
 
       setGoals(filteredGoals);
       if (filteredGoals.length > 0) {
@@ -98,16 +98,13 @@ const DoneExercise = () => {
 
   const handleNext = () => {
     if (goals.length > 0) {
-     
       const availableGoals = goals.filter((goal) => goal.id !== selectedGoal.id);
-
 
       if (availableGoals.length > 0) {
         const randomGoal = availableGoals[Math.floor(Math.random() * availableGoals.length)];
         setSelectedGoal(randomGoal);
         setReps(randomGoal.Reps);
       } else {
-        
         console.log("No more exercises to select");
       }
     }
@@ -156,6 +153,8 @@ const DoneExercise = () => {
   };
 
   const calculateSetsRemaining = async () => {
+    if (!selectedGoal) return;
+
     const { data: doneData, error: doneError } = await supabase
       .from("done")
       .select("goals_id")
@@ -167,37 +166,30 @@ const DoneExercise = () => {
       return;
     }
 
-    console.log("Done exercises:", doneData); 
-
+    console.log("Done exercises:", doneData);
 
     const totalSets = goals
-      .filter((goal) => goal.microcycle === selectedGoal.microcycle)
+      .filter((goal) => goal.microcycle === selectedGoal.microcycle && goal.id === selectedGoal.id)
       .map((goal) => ({
         id: goal.id,
         exercise: goal.Exercise,
         sets: goal.Sets,
       }));
 
-    console.log("Total sets in microcycle:", totalSets);
-
+    console.log("Total sets for selected goal:", totalSets);
 
     const doneSets = doneData.map((done) => done.goals_id);
 
     console.log("Done sets:", doneSets);
 
+    const setsRemainingCount = Math.max(
+      totalSets[0]?.sets - doneSets.filter((id) => id === totalSets[0]?.id).length,
+      0
+    );
 
-    const remainingSets = totalSets.flatMap((goal) => {
-      const setsDone = doneSets.filter((id) => id === goal.id).length;
-      const setsRemainingCount = goal.sets - setsDone;
+    console.log(`Sets remaining for ${selectedGoal.Exercise}:`, setsRemainingCount);
 
-      console.log(`Sets remaining for ${goal.exercise}:`, setsRemainingCount);
-
-    
-      return Array(setsRemainingCount).fill(goal.exercise);
-    });
-
-    console.log("Sets remaining:", remainingSets);
-    setSetsRemaining(remainingSets);
+    setSetsRemaining(setsRemainingCount);
   };
 
   useEffect(() => {
@@ -250,6 +242,11 @@ const DoneExercise = () => {
                 />
               </Col>
             </Row>
+            <Row className="mb-3">
+              <Col xs={12} md={6}>
+                <p><strong>Sets Remaining:</strong> {setsRemaining}</p>
+              </Col>
+            </Row>
             <Row className="d-flex justify-content-between">
               <Col xs={4}>
                 <Button variant="primary" block onClick={handleDone}>Done</Button>
@@ -267,14 +264,6 @@ const DoneExercise = () => {
       ) : (
         <p>No active goals available. Please check your goals list.</p>
       )}
-      <div>
-        <h4>Remaining Sets:</h4>
-        <ul>
-          {setsRemaining.map((set, index) => (
-            <li key={index}>{set}</li>
-          ))}
-        </ul>
-      </div>
     </Container>
   );
 };

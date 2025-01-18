@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useAuth } from '../contexts/userAuth';
+import { Button, Form, Container, Row, Col } from 'react-bootstrap';
 
 const LoginSignup = () => {
   const { user, signUp, signIn, signOut, loading } = useAuth();
@@ -25,37 +26,53 @@ const LoginSignup = () => {
 
   if (user) {
     return (
-      <div>
-        <button onClick={signOut}>Log out</button>
-      </div>
+      <Container>
+        <Row>
+          <Col className="d-flex justify-content-end">
+            <Button variant="danger" onClick={signOut}>
+              Log out
+            </Button>
+          </Col>
+        </Row>
+      </Container>
     );
   }
 
   return (
-    <div>
-      <h2>{isSignUp ? 'Sign Up' : 'Log In'}</h2>
-      <form onSubmit={handleSubmit}>
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          required
-        />
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          required
-        />
-        <button type="submit">{isSignUp ? 'Sign Up' : 'Log In'}</button>
-      </form>
-      {error && <div>{error}</div>}
-      <button onClick={() => setIsSignUp(!isSignUp)}>
-        {isSignUp ? 'Already have an account? Log In' : 'Don\'t have an account? Sign Up'}
-      </button>
-    </div>
+    <Container>
+      <Row className="justify-content-center">
+        <Col xs={12} md={6}>
+          <h2 className="text-center">{isSignUp ? 'Sign Up' : 'Log In'}</h2>
+          <Form onSubmit={handleSubmit}>
+            <Form.Group controlId="email">
+              <Form.Control
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+              />
+            </Form.Group>
+            <Form.Group controlId="password">
+              <Form.Control
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </Form.Group>
+            <Button variant="primary" type="submit" block>
+              {isSignUp ? 'Sign Up' : 'Log In'}
+            </Button>
+          </Form>
+          {error && <div className="text-danger text-center mt-2">{error}</div>}
+          <Button variant="link" onClick={() => setIsSignUp(!isSignUp)} block>
+            {isSignUp ? 'Already have an account? Log In' : 'Don\'t have an account? Sign Up'}
+          </Button>
+        </Col>
+      </Row>
+    </Container>
   );
 };
 
